@@ -18,7 +18,9 @@ exports.createUser = async (req, res) => {
     });
     await user.save();
 
-    const activationUrl = `${req.protocol}://${req.get('host')}/api/users/activate/${user._id}`;
+    // envio de url para realizar la activación
+
+    const activationUrl = `${req.protocol}://${req.get('host')}/api/users/activate/${user._id}`; 
 
 
     res.status(201).json({ message: 'Usuario creado correctamente. Activa tu cuenta con el enlace.',activationUrl});
@@ -40,6 +42,8 @@ exports.login = async (req, res) => {
     }
     // Buscar usuario por email
     const user = await User.findOne({ email });
+
+    //Se valida ahora si el usuario esta activo 
     if (!user || !user.active) {
       // Email no existe
       return res.status(401).json({ error: 'Credenciales incorrectas o usuario no activado' });
@@ -64,6 +68,8 @@ exports.login = async (req, res) => {
   }
 };
 
+
+// Función para activar usuarios
 exports.activateUser = async (req, res) => {
   const user = await User.findByIdAndUpdate(req.params.id, { active: true }, { new: true });
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });

@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  avatar: String, 
+  avatar: String,  // Propiedad para asignar avatar
 
 }, { timestamps: true }); 
 

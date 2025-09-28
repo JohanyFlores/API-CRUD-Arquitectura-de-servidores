@@ -11,10 +11,11 @@ app.use(express.json());
 connectDB();
 
 app.use('/api/posts', postRoutes);
-app.use('/api', userRoutes); // <-- NUEVO: conecta las rutas de usuario
+app.use('/api', userRoutes); 
 
 const path = require('path');
-app.use('/avatars', express.static(path.join(__dirname, 'uploads/avatars')));
+
+app.use('/avatars', express.static(path.join(__dirname, 'uploads/avatars')));  // Crea la ruta donde se guarda la imagen
 
 
 app.listen(PORT, () => {
