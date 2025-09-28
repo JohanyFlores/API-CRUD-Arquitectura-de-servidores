@@ -6,15 +6,22 @@ const jwt = require('jsonwebtoken');
 exports.createUser = async (req, res) => {
   try {
     const { name, email, password, bio } = req.body;
+    const avatar = req.file ? `/avatars/${req.file.filename}` : null;
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({
       name,
       email,
       password: hashedPassword,
       bio,
+      avatar,
     });
     await user.save();
-    res.status(201).json({ message: 'Usuario creado correctamente' });
+
+    const activationUrl = `${req.protocol}://${req.get('host')}/api/users/activate/${user._id}`;
+
+
+    res.status(201).json({ message: 'Usuario creado correctamente. Activa tu cuenta con el enlace.',activationUrl});
   } catch (error) {
     if (error.code === 11000) { // email duplicado
       return res.status(400).json({ error: 'Email ya registrado' });
@@ -33,9 +40,9 @@ exports.login = async (req, res) => {
     }
     // Buscar usuario por email
     const user = await User.findOne({ email });
-    if (!user) {
+    if (!user || !user.active) {
       // Email no existe
-      return res.status(401).json({ error: 'Credenciales incorrectas' });
+      return res.status(401).json({ error: 'Credenciales incorrectas o usuario no activado' });
     }
     // Validar contraseña
     const valid = await bcrypt.compare(password, user.password);
@@ -43,6 +50,8 @@ exports.login = async (req, res) => {
       // Contraseña incorrecta
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
+
+    
     // Crear token JWT
     const token = jwt.sign(
       { userId: user._id, email: user.email },
@@ -53,4 +62,17 @@ exports.login = async (req, res) => {
   } catch (error) {
     res.status(400).json({ error: 'Error en login' });
   }
+};
+
+exports.activateUser = async (req, res) => {
+  const user = await User.findByIdAndUpdate(req.params.id, { active: true }, { new: true });
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  res.json({ message: 'Cuenta activada. Ya puedes iniciar sesión.' });
+};
+
+exports.getUser = async (req, res) => {
+  const user = await User.findById(req.params.id).select('-password');
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (user.avatar) user.avatar = `${req.protocol}://${req.get('host')}${user.avatar}`;
+  res.json(user);
 };
